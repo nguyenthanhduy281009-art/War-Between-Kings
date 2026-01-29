@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PET ARENA - ĐĂNG NHẬP</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; }
+        .auth-box { background: #16213e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; outline: none; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .btn-login { background: #e94560; color: white; }
+        .btn-register { background: #0f3460; color: white; font-size: 12px; }
+        .title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #e94560; }
+    </style>
+</head>
+<body>
+
+<div class="auth-box">
+    <div class="title">🐉 PET ARENA</div>
+    
+    <div id="auth-form">
+        <input type="text" id="user" placeholder="Tên đăng nhập">
+        <input type="password" id="pass" placeholder="Mật khẩu">
+        
+        <button class="btn btn-login" onclick="login()">ĐĂNG NHẬP</button>
+        <button class="btn btn-register" onclick="register()">CHƯA CÓ TÀI KHOẢN? ĐĂNG KÝ</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBka80W-Aa9m4NXQ7PD4kmx1xew-lz67l0",
+        databaseURL: "https://fastraffic-8b585-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "fastraffic-8b585"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 1. Hàm Đăng ký
+    function register() {
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+
+        if (u.length < 3 || p.length < 3) return alert("Tên và mật khẩu phải trên 3 ký tự!");
+
+        db.ref("game_accounts/" + u).once("value").then(s => {
+            if (s.exists()) {
+                alert("Tài khoản này đã tồn tại!");
+            } else {
+                // Tạo tài khoản mới kèm chỉ số Pet ban đầu
+                db.ref("game_accounts/" + u).set({
+                    password: p,
+                    pet: {
+                        name: "Rồng Con",
+                        atk: 10,
+                        hp: 100,
+                        gold: 50,
+                        level: 1,
+                        exp: 0
+                    }
+                }).then(() => {
+                    alert("Đăng ký thành công! Hãy đăng nhập.");
+                });
+            }
+        });
+    }
+
+    // 2. Hàm Đăng nhập
+    function login() {
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+
+        db.ref("game_accounts/" + u).once("value").then(s => {
+            if (s.exists() && s.val().password === p) {
+                // Lưu tên đăng nhập vào bộ nhớ trình duyệt (Session)
+                localStorage.setItem("game_user", u);
+                alert("Đăng nhập thành công!");
+                // Chuyển hướng sang trang game
+                window.location.href = "play.html"; 
+            } else {
+                alert("Sai tài khoản hoặc mật khẩu!");
+            }
+        });
+    }
+
+    // Tự động chuyển nếu đã đăng nhập trước đó
+    if (localStorage.getItem("game_user")) {
+        // window.location.href = "play.html"; 
+    }
+</script>
+
+</body>
+</html>
