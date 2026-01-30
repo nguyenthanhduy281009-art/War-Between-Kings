@@ -3,50 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>War Between Kings - Đăng nhập</title>
+    <title>War Between Kings - Hành Lang</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #ffcc00; --bg: #1a0f00; }
         body { font-family: 'Georgia', serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #fff; }
         .box { background: #2d1e10; padding: 30px; border-radius: 8px; border: 2px solid #5d4037; width: 340px; text-align: center; box-shadow: 0 0 25px rgba(0,0,0,0.8); }
         .brand-name { font-size: 26px; font-weight: bold; margin-bottom: 5px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px #000; }
         #title { margin-bottom: 20px; font-size: 14px; color: #bcaaa4; letter-spacing: 1px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #5d4037; border-radius: 4px; box-sizing: border-box; background: #1a0f00; color: #fff; outline: none; font-size: 14px; }
+        
+        .input-group { position: relative; margin: 10px 0; }
+        input { width: 100%; padding: 12px; border: 1px solid #5d4037; border-radius: 4px; box-sizing: border-box; background: #1a0f00; color: #fff; outline: none; font-size: 14px; }
         input::placeholder { color: #5d4037; }
+        
+        /* Nút hiện/ẩn mật khẩu */
+        .toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #8d6e63; cursor: pointer; }
+        
         button.main { width: 100%; padding: 12px; background: #8d6e63; color: #fff; border: 1px solid var(--primary); border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
-        button.main:hover { background: #5d4037; transform: translateY(-2px); }
+        button.main:hover { background: #5d4037; }
+        
+        #otp-box { display: none; margin-top: 10px; border: 1px dashed var(--primary); padding: 10px; border-radius: 4px; background: rgba(0,0,0,0.3); }
         .link { margin-top: 15px; font-size: 13px; color: #bcaaa4; cursor: pointer; text-decoration: underline; }
-        #otp-section { display: none; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 5px; border: 1px dashed #ffcc00; margin-top: 10px; }
-        #error { color: #ff5252; font-size: 12px; margin-top: 12px; min-height: 15px; font-style: italic; }
+        #error { color: #ff5252; font-size: 12px; margin-top: 12px; min-height: 15px; }
     </style>
 </head>
 <body>
 
 <div class="box">
     <div class="brand-name">WAR BETWEEN KINGS</div>
-    <h2 id="title">HÀNH LANG QUÂN VƯƠNG</h2>
+    <h2 id="title">ĐĂNG NHẬP</h2>
     
-    <div id="auth-fields">
-        <input type="email" id="email" placeholder="Email quốc vương">
-        <input type="password" id="pass" placeholder="Mật khẩu mật mã">
-        
-        <div id="otp-section">
-            <p style="font-size: 12px; color: #ffcc00; margin: 5px 0;">Mã ấn đã được gửi vào thư tín của bạn</p>
-            <input type="number" id="otp-input" placeholder="Nhập mã OTP (6 số)">
-        </div>
-
-        <button class="main" onclick="handleAuth()" id="btnSubmit">ĐĂNG NHẬP</button>
+    <div class="input-group">
+        <input type="email" id="email" placeholder="Email Quốc vương">
     </div>
+
+    <div class="input-group">
+        <input type="password" id="pass" placeholder="Mật khẩu mật mã">
+        <i class="fa-solid fa-eye toggle-pass" onclick="togglePassword()"></i>
+    </div>
+
+    <div id="otp-box">
+        <p style="font-size: 11px; color: var(--primary); margin: 0 0 8px 0;">Nhập 6 số từ Thư tín của bạn</p>
+        <input type="number" id="otp-input" placeholder="Mã OTP xác thực">
+    </div>
+
+    <button class="main" onclick="handleAuth()" id="btnSubmit">BẮT ĐẦU</button>
     
     <div id="error"></div>
     <div class="link" onclick="switchMode()" id="toggleTxt">Chưa có lãnh địa? Đăng ký ngay</div>
 </div>
 
 <script>
-    // 1. Cấu hình Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBka80W-Aa9m4NXQ7PD4kmx1xew-lz67l0",
         authDomain: "fastraffic-8b585.firebaseapp.com",
@@ -54,91 +65,77 @@
         projectId: "fastraffic-8b585"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
-    // 2. Cấu hình EmailJS với mã của bạn
     emailjs.init("Svnn8amk0BYi3I1Ez");
 
     let isLogin = true;
     let generatedOTP = null;
 
+    // Hiện/Ẩn mật khẩu
+    function togglePassword() {
+        const passInput = document.getElementById("pass");
+        const icon = document.querySelector(".toggle-pass");
+        if (passInput.type === "password") {
+            passInput.type = "text";
+            icon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+            passInput.type = "password";
+            icon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+    }
+
     function switchMode() {
         isLogin = !isLogin;
-        generatedOTP = null; // Reset OTP khi chuyển chế độ
-        document.getElementById("title").innerText = isLogin ? "HÀNH LANG QUÂN VƯƠNG" : "KHỞI TẠO LÃNH ĐỊA";
-        document.getElementById("btnSubmit").innerText = isLogin ? "ĐĂNG NHẬP" : "NHẬN MÃ KHỞI TẠO";
-        document.getElementById("otp-section").style.display = "none";
+        generatedOTP = null;
+        document.getElementById("title").innerText = isLogin ? "ĐĂNG NHẬP" : "KHỞI TẠO LÃNH ĐỊA";
+        document.getElementById("btnSubmit").innerText = isLogin ? "BẮT ĐẦU" : "NHẬN MÃ OTP";
+        document.getElementById("otp-box").style.display = "none";
         document.getElementById("toggleTxt").innerText = isLogin ? "Chưa có lãnh địa? Đăng ký ngay" : "Đã có lãnh địa? Đăng nhập";
         document.getElementById("error").innerText = "";
     }
 
-    // Hàm gửi OTP qua EmailJS
-    async function sendOTP(targetEmail) {
+    async function sendOTP(email) {
         generatedOTP = Math.floor(100000 + Math.random() * 900000);
-        const templateParams = { 
-            to_email: targetEmail, 
-            otp: generatedOTP 
-        };
-        
-        return emailjs.send('service_g47r7xn', 'template_d3q0iqk', templateParams);
+        return emailjs.send('service_g47r7xn', 'template_d3q0iqk', {
+            to_email: email,
+            otp: generatedOTP
+        });
     }
 
     async function handleAuth() {
         const email = document.getElementById("email").value.trim();
         const pass = document.getElementById("pass").value.trim();
         const err = document.getElementById("error");
-        
-        if(!email || !pass) return err.innerText = "Quốc vương chưa điền đủ thông tin!";
+
+        if (!email || !pass) return err.innerText = "Điền đủ thông tin!";
 
         try {
             if (isLogin) {
-                // LOGIC ĐĂNG NHẬP
-                err.innerText = "Đang kiểm tra danh tính...";
                 await firebase.auth().signInWithEmailAndPassword(email, pass);
                 localStorage.setItem("king_user", email);
                 window.location.href = "play.html";
             } else {
-                // LOGIC ĐĂNG KÝ
-                const otpInput = document.getElementById("otp-input");
-                
-                // Bước 1: Gửi OTP lần đầu
                 if (!generatedOTP) {
-                    err.style.color = "#ffcc00";
-                    err.innerText = "Hệ thống đang gửi thư tín...";
+                    err.innerText = "Đang gửi OTP...";
                     await sendOTP(email);
-                    
-                    document.getElementById("otp-section").style.display = "block";
-                    document.getElementById("btnSubmit").innerText = "XÁC NHẬN KHỞI TẠO";
-                    err.innerText = "Thư tín đã gửi! Hãy kiểm tra Email.";
+                    document.getElementById("otp-box").style.display = "block";
+                    document.getElementById("btnSubmit").innerText = "XÁC NHẬN ĐĂNG KÝ";
+                    err.innerText = "Kiểm tra Email để lấy mã!";
                     return;
                 }
 
-                // Bước 2: Kiểm tra OTP sau khi đã gửi
-                if (otpInput.value != generatedOTP) {
-                    err.style.color = "#ff5252";
-                    return err.innerText = "Mã xác nhận không trùng khớp!";
+                if (document.getElementById("otp-input").value != generatedOTP) {
+                    return err.innerText = "Mã OTP không đúng!";
                 }
 
-                err.innerText = "Đang khởi tạo lãnh địa...";
                 const res = await firebase.auth().createUserWithEmailAndPassword(email, pass);
-                
-                // Tạo dữ liệu lính và vàng ban đầu
                 await firebase.database().ref("game_users/" + res.user.uid).set({
-                    email: email,
-                    gold: 1500,
-                    army: 20,
-                    level: 1,
-                    power: 100
+                    email: email, gold: 1500, army: 20, level: 1
                 });
-                
-                alert("Lãnh địa đã sẵn sàng! Mời Quốc vương đăng nhập.");
+                alert("Thành công! Hãy đăng nhập.");
                 location.reload();
             }
-        } catch (e) { 
-            err.style.color = "#ff5252";
-            err.innerText = "Lỗi: " + e.message; 
-        }
+        } catch (e) { err.innerText = e.message; }
     }
 </script>
-
 </body>
 </html>
